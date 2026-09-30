@@ -39,11 +39,21 @@ tasks:
     cmds:
       - '{{.CAPPED}} ./gradlew --no-daemon assembleDebug'
 
+  release:
+    desc: Build signed release APKs → android/app/build/outputs/apk/release/ (run scripts/release-keystore once first)
+    dir: android
+    deps: [core]
+    preconditions:
+      - sh: test -f keystore.properties
+        msg: "No signing key yet: run scripts/release-keystore"
+    cmds:
+      - '{{.CAPPED}} ./gradlew --no-daemon assembleRelease'
+
   install:
     desc: Install the debug APK on the connected device or emulator
     deps: [apk]
     cmds:
-      - adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+      - adb install -r android/app/build/outputs/apk/debug/app-debug-universal.apk
 
   emulator:
     desc: Start a headless emulator (needs `nix develop .#emulator`); ANDROID_AVD_HOME must hold an AVD named pogo
