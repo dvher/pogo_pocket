@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Pogo Pocket</string>
+    <string name="widget_name">Pogo note</string>
+    <string name="widget_description">A sticky note on your home screen. Tap the folded corner for the next one.</string>
+</resources>

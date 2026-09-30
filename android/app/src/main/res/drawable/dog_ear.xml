@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Folded page corner: the flap covers the top-left half, the bottom-right
+     half is cut away. The flap is white and tinted at runtime; the edge
+     shadow stays dark. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="44dp" android:height="44dp"
+    android:viewportWidth="44" android:viewportHeight="44">
+    <path android:fillColor="#FFFFFF" android:pathData="M0,0 L44,0 L0,44 Z" />
+</vector>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Pogo" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowBackground">@color/paper</item>
+    </style>
+    <color name="paper">#FFFBF0</color>
+    <color name="pogo_yellow">#FFF176</color>
+</resources>

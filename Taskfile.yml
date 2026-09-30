@@ -1,0 +1,51 @@
+version: '3'
+
+# Run inside `nix develop` (or with the Android SDK, NDK, Go and JDK 17 set up).
+# Heavy steps run through scripts/capped, which puts them in one memory-capped
+# slice (POGO_DEV_MEM, default 6G) so the machine stays responsive.
+
+vars:
+  CAPPED: '{{.ROOT_DIR}}/scripts/capped'
+
+tasks:
+  tools:
+    desc: Install gomobile and gobind at the version pinned in core/go.mod
+    dir: core
+    cmds:
+      - go install golang.org/x/mobile/cmd/gomobile golang.org/x/mobile/cmd/gobind
+
+  core:
+    desc: Build the Go core into android/app/libs/pogocore.aar
+    dir: core
+    deps: [tools]
+    sources: ['**/*.go', go.mod, go.sum, ../../desktop/pkg/**/*.go]
+    generates: [../android/app/libs/pogocore.aar]
+    env:
+      GOFLAGS: -p=2
+    cmds:
+      - mkdir -p ../android/app/libs
+      - PATH="$(go env GOPATH)/bin:$PATH" {{.CAPPED}} gomobile bind -ldflags="-s -w" -target=android/arm64,android/arm,android/amd64 -androidapi 26 -javapkg dev.pogo.pocket.core -o ../android/app/libs/pogocore.aar .
+
+  test:
+    desc: Run the Go core tests (the sync test needs Pogo Pad at ../server)
+    dir: core
+    cmds:
+      - '{{.CAPPED}} go test -p 2 ./...'
+
+  apk:
+    desc: Build a debug APK → android/app/build/outputs/apk/debug/app-debug.apk
+    dir: android
+    deps: [core]
+    cmds:
+      - '{{.CAPPED}} ./gradlew --no-daemon assembleDebug'
+
+  install:
+    desc: Install the debug APK on the connected device or emulator
+    deps: [apk]
+    cmds:
+      - adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+
+  emulator:
+    desc: Start a headless emulator (needs `nix develop .#emulator`); ANDROID_AVD_HOME must hold an AVD named pogo
+    cmds:
+      - '{{.CAPPED}} emulator -avd pogo -memory 2048 -cores 2 -no-window -no-audio -no-snapshot -no-boot-anim -gpu swiftshader_indirect'

@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Runs a command inside a shared, memory-capped systemd slice (pogo-dev.slice).
+# Everything started through this script shares one budget, so an emulator
+# plus a Gradle build can't take the whole machine down: when the slice goes
+# over the cap, the kernel kills a process inside it instead.
+#
+#   POGO_DEV_MEM=6G scripts/capped ./gradlew assembleDebug
+#
+# Without systemd (or without a user session) the command runs uncapped.
+set -euo pipefail
+
+mem="${POGO_DEV_MEM:-6G}"
+if command -v systemd-run >/dev/null && systemctl --user show-environment >/dev/null 2>&1; then
+    systemctl --user set-property --runtime pogo-dev.slice "MemoryMax=$mem" MemorySwapMax=0 >/dev/null
+    exec systemd-run --user --scope --quiet --collect --slice=pogo-dev.slice -- "$@"
+fi
+echo "capped: systemd user session not available; running without a memory cap" >&2
+exec "$@"

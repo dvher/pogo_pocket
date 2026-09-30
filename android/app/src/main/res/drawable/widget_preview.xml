@@ -1,0 +1,13 @@
+<!-- Picker preview: a yellow note with a few lines and the folded corner. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="160dp" android:height="160dp" android:viewportWidth="160" android:viewportHeight="160">
+    <path android:fillColor="#FFF176" android:pathData="M18,0 H142 A18,18 0 0 1 160,18 V116 L116,160 H18 A18,18 0 0 1 0,142 V18 A18,18 0 0 1 18,0 Z" />
+    <path android:fillColor="#D9C84A" android:pathData="M116,116 H160 L116,160 Z" />
+    <path android:fillColor="#3E3500" android:pathData="M16,20 h80 v10 h-80 z" />
+    <path android:strokeColor="#3E3500" android:strokeWidth="2.5" android:pathData="M16,46 h12 v12 h-12 z" />
+    <path android:fillColor="#3E3500" android:pathData="M36,49 h70 v6 h-70 z" />
+    <path android:fillColor="#C7B200" android:pathData="M16,68 h12 v12 h-12 z" />
+    <path android:fillColor="#8A7E2A" android:pathData="M36,71 h52 v6 h-52 z" />
+    <path android:strokeColor="#3E3500" android:strokeWidth="2.5" android:pathData="M16,90 h12 v12 h-12 z" />
+    <path android:fillColor="#3E3500" android:pathData="M36,93 h60 v6 h-60 z" />
+</vector>
