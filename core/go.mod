@@ -3,7 +3,7 @@ module github.com/dvher/pogo_pocket/core
 go 1.26.0
 
 require (
-	github.com/dvher/pogo v0.0.0
+	github.com/dvher/pogo v0.2.0
 	github.com/google/uuid v1.6.0
 )
 
@@ -26,8 +26,6 @@ require (
 	modernc.org/memory v1.12.1 // indirect
 	modernc.org/sqlite v1.60.1 // indirect
 )
-
-replace github.com/dvher/pogo => ../../desktop
 
 tool (
 	golang.org/x/mobile/cmd/gobind

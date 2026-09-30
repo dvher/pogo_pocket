@@ -95,9 +95,8 @@ the kernel stops the build instead of freezing the machine.
 **Emulator.** `nix develop .#emulator` adds the emulator and an x86_64 Android 15 image. Create an
 AVD named `pogo`, then run `task emulator` (headless, 2 GB RAM, inside the memory cap).
 
-**Local development against an unreleased desktop repo.** `core/go.mod` points
-`github.com/dvher/pogo` at `../../desktop` with a `replace` directive, so the repos must sit side
-by side, as in the Pogo parent folder.
+**Changing Pogo's shared code.** `core/` depends on a tagged release of `github.com/dvher/pogo`.
+To work on both at once, put the repos side by side and add a `go.work` with `use (./desktop ./mobile/core)`.
 
 ## iOS
 
