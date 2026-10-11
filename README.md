@@ -3,7 +3,7 @@
 **Your [Pogo](https://github.com/dvher/pogo) sticky notes on your phone's home screen.**
 
 Pogo Pocket is a home-screen widget that shows one of your notes. Tick tasks off right on the
-widget, tap the folded corner to flip to the next note, and tap the text to edit it. Notes sync
+widget, tap the folded corner to flip to the next note, and tap anywhere else to edit it. Notes sync
 with your desktop through **[Pogo Pad](https://github.com/dvher/pogo_pad)**, the small server you
 host yourself, with optional end-to-end encryption.
 
@@ -13,8 +13,8 @@ Android is available now. iOS is planned (see [iOS](#ios)).
 
 ```
 ┌──────────────────────┐
-│ Groceries            │  tap a task → crossed off, synced everywhere
-│ [ ] milk             │  tap the text → open the note to edit
+│ Groceries            │  tap a checkbox → crossed off, synced everywhere
+│ [ ] milk             │  tap anywhere else → open the note to edit
 │ [x] eggs             │
 │                      │
 │ +   2 / 5         ◢──┘  + → new note      folded corner → next note

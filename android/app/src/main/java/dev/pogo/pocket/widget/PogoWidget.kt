@@ -22,8 +22,6 @@ import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.action.actionStartActivity
-import androidx.glance.appwidget.lazy.LazyColumn
-import androidx.glance.appwidget.lazy.items
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.currentState
@@ -142,43 +140,51 @@ private fun NoteWidget(v: WidgetView) {
     }
 }
 
+/**
+ * The note's lines. A plain Column rather than a LazyColumn: a list view takes
+ * every tap inside it, so the page's "open the editor" click never fired. Here
+ * only the checkboxes are clickable and any other tap falls through to the page.
+ * Notes taller than the widget are cut off; the editor shows the rest.
+ */
 @Composable
 private fun Lines(v: WidgetView) {
     val note = v.note ?: return
-    val context = LocalContext.current
-    val open = actionStartActivity(MainActivity.openIntent(context, note.id))
     val ink = v.ink
-    LazyColumn(GlanceModifier.fillMaxSize()) {
-        items(v.lines) { line ->
+    Column(GlanceModifier.fillMaxSize()) {
+        v.lines.forEach { line ->
             val indent = GlanceModifier.padding(start = (line.indent * 14).dp)
             when (line.kind) {
-                "task" -> CheckBox(
-                    checked = line.checked,
-                    onCheckedChange = actionRunCallback<ToggleTaskAction>(
-                        actionParametersOf(ToggleTaskAction.NOTE to note.id, ToggleTaskAction.LINE to line.line),
-                    ),
-                    text = line.text,
-                    modifier = indent,
-                    style = TextStyle(
-                        color = ColorProvider(if (line.checked) ink.copy(alpha = 0.5f) else ink),
-                        fontSize = 13.sp,
-                        textDecoration = if (line.checked) TextDecoration.LineThrough else TextDecoration.None,
-                    ),
-                    colors = CheckboxDefaults.colors(
-                        checkedColor = ColorProvider(v.accent),
-                        uncheckedColor = ColorProvider(ink.copy(alpha = 0.7f)),
-                    ),
-                )
+                "task" -> Row(indent, verticalAlignment = Alignment.CenterVertically) {
+                    // Only the box toggles; tapping the text opens the note like any other line.
+                    CheckBox(
+                        checked = line.checked,
+                        onCheckedChange = actionRunCallback<ToggleTaskAction>(
+                            actionParametersOf(ToggleTaskAction.NOTE to note.id, ToggleTaskAction.LINE to line.line),
+                        ),
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = ColorProvider(v.accent),
+                            uncheckedColor = ColorProvider(ink.copy(alpha = 0.7f)),
+                        ),
+                    )
+                    Text(
+                        line.text,
+                        style = TextStyle(
+                            color = ColorProvider(if (line.checked) ink.copy(alpha = 0.5f) else ink),
+                            fontSize = 13.sp,
+                            textDecoration = if (line.checked) TextDecoration.LineThrough else TextDecoration.None,
+                        ),
+                    )
+                }
                 "gap" -> Spacer(GlanceModifier.height(6.dp))
                 "rule" -> Box(
                     GlanceModifier.fillMaxWidth().padding(vertical = 6.dp),
                 ) { Spacer(GlanceModifier.fillMaxWidth().height(1.dp).background(ink.copy(alpha = 0.25f))) }
-                "bullet" -> Row(indent.clickable(open)) {
+                "bullet" -> Row(indent) {
                     Text(line.marker, style = TextStyle(color = ColorProvider(v.accent), fontSize = 13.sp))
                     Spacer(GlanceModifier.width(6.dp))
                     Text(line.text, style = textStyle(ink, 13))
                 }
-                else -> Text(line.text, GlanceModifier.clickable(open), style = styleFor(line, ink))
+                else -> Text(line.text, style = styleFor(line, ink))
             }
         }
     }
