@@ -39,13 +39,18 @@ import dev.pogo.pocket.Line
 import dev.pogo.pocket.Note
 import dev.pogo.pocket.Palette
 import dev.pogo.pocket.Pogo
+import dev.pogo.pocket.ui.MainActivity
 import dev.pogo.pocket.ui.NoteLines
 import dev.pogo.pocket.ui.PogoTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** Shown when a widget is added (or reconfigured): pick the note it shows. */
+/**
+ * Shown when a widget is added: pick the note it shows. Reconfiguring a placed
+ * widget (long-press → Reconfigure) opens its note in the editor instead, since
+ * the folded corner already switches notes.
+ */
 class ConfigureActivity : ComponentActivity() {
     private var widgetId = AppWidgetManager.INVALID_APPWIDGET_ID
 
@@ -54,6 +59,13 @@ class ConfigureActivity : ComponentActivity() {
         widgetId = intent?.extras?.getInt(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID)
             ?: AppWidgetManager.INVALID_APPWIDGET_ID
         if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
+            finish()
+            return
+        }
+        if (Pogo.core(this).widgetHasNote(widgetId.toString())) {
+            val note = Widgets.load(this, widgetId.toString()).note
+            startActivity(note?.let { MainActivity.openIntent(this, it.id) } ?: MainActivity.launchIntent(this))
+            setResult(RESULT_OK, result())
             finish()
             return
         }

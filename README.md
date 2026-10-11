@@ -22,8 +22,9 @@ Android is available now. iOS is planned (see [iOS](#ios)).
 ```
 
 - **Pick a note when you add the widget** from the launcher's widget picker. Widgets added from the
-  app start on your first note. Long-press a widget → **Reconfigure** to choose again.
+  app start on your first note. To switch notes later, tap the folded corner.
   You can add as many widgets as you like, each showing its own note.
+- **Long-press a widget → Reconfigure** to open its note in the editor.
 - **No notes?** The widget shows an empty clipboard until you write one or sync some in.
 - **Locked?** If your Pogo Pad uses end-to-end encryption and the phone has no notes yet, the
   widget asks you to open the app and enter the passphrase once.
