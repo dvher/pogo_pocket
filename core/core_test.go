@@ -159,6 +159,9 @@ func TestWidgetLocal(t *testing.T) {
 	if c.WidgetHasNote("8") {
 		t.Fatal("a new widget has no note yet")
 	}
+	if view(t, c, "9"); !c.WidgetHasNote("9") {
+		t.Fatal("a widget that has shown a note keeps it")
+	}
 	if err := c.WidgetSetNote("8", b); err != nil {
 		t.Fatal(err)
 	}
