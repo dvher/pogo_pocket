@@ -108,7 +108,8 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: pogo-pocket-debug
-          path: android/app/build/outputs/apk/debug/app-debug-universal.apk
+          path: android/app/build/outputs/apk/debug/app-universal-debug.apk
+          if-no-files-found: error
           retention-days: 14
 
   # The instrumented tests call the Go core through the real gomobile

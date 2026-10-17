@@ -79,7 +79,7 @@ With Nix:
 ```sh
 nix develop            # Go, gomobile's needs (SDK + NDK), JDK 17, Gradle, Task
 task test              # Go core tests (the sync test runs Pogo Pad from ../server)
-task apk               # → android/app/build/outputs/apk/debug/app-debug.apk
+task apk               # → android/app/build/outputs/apk/debug/app-universal-debug.apk
 task install           # adb install on a connected phone
 ```
 
