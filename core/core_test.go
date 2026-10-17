@@ -156,8 +156,17 @@ func TestWidgetLocal(t *testing.T) {
 	}
 
 	// Widgets are independent; a picked note sticks.
+	if c.WidgetHasNote("8") {
+		t.Fatal("a new widget has no note yet")
+	}
+	if view(t, c, "9"); !c.WidgetHasNote("9") {
+		t.Fatal("a widget that has shown a note keeps it")
+	}
 	if err := c.WidgetSetNote("8", b); err != nil {
 		t.Fatal(err)
+	}
+	if !c.WidgetHasNote("8") || !c.WidgetHasNote("7") {
+		t.Fatal("picking a note, or flipping to one, gives the widget a note")
 	}
 	v := view(t, c, "8")
 	if v.Note.ID != b || v.Lines[0].Text != "Second" || v.Lines[1].Kind != "task" || v.Index != 1 {
@@ -199,6 +208,10 @@ func TestWidgetLocal(t *testing.T) {
 	}
 	if err := c.WidgetNext("8"); err != nil {
 		t.Fatal(err)
+	}
+	c.WidgetRemove("8")
+	if c.WidgetHasNote("8") {
+		t.Fatal("a removed widget keeps its note")
 	}
 	c.WidgetRemove("8")
 }

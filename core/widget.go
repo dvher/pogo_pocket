@@ -77,6 +77,13 @@ func (c *Core) WidgetRemove(key string) {
 	c.store.SetSetting(widgetIndexKey(key), "")
 }
 
+// WidgetHasNote reports whether a widget has been given a note: picked, flipped
+// to or shown, all of which happen once it is on the home screen. The host uses
+// it to tell reconfiguring a placed widget apart from adding a new one.
+func (c *Core) WidgetHasNote(key string) bool {
+	return c.store.Setting(widgetNoteKey(key), "") != ""
+}
+
 // WidgetViewJSON returns the WidgetView for a widget as JSON.
 func (c *Core) WidgetViewJSON(key string) (string, error) {
 	v, err := c.widgetView(key)
@@ -99,6 +106,12 @@ func (c *Core) widgetView(key string) (WidgetView, error) {
 			v.State = "locked"
 		}
 	} else {
+		// Remember the note a new widget starts on, so WidgetHasNote knows it is placed.
+		if c.store.Setting(widgetNoteKey(key), "") == "" {
+			if err := c.widgetShow(key, notes, i); err != nil {
+				return WidgetView{}, err
+			}
+		}
 		n := fromStore(notes[i])
 		col = palette.Get(n.Color)
 		v.State, v.Note, v.Lines = "note", &n, Lines(n.Content)
