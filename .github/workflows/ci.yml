@@ -81,7 +81,7 @@ jobs:
             android/gradle/wrapper/gradle-wrapper.properties
       - uses: android-actions/setup-android@v4
         with:
-          packages: platforms;android-35 build-tools;35.0.0 ndk;${{ env.NDK_VERSION }}
+          packages: platforms;android-37.0 build-tools;37.0.0 ndk;${{ env.NDK_VERSION }}
       - name: Build the Go core (gomobile bind)
         working-directory: core
         env:

@@ -86,7 +86,7 @@ task install           # adb install on a connected phone
 Without Nix, you need:
 - Go 1.26+
 - JDK 17
-- the Android SDK (platform 35, build-tools 35.0.0) and NDK 27, with `ANDROID_HOME` and `ANDROID_NDK_HOME` set
+- the Android SDK (platform 37, build-tools 37.0.0) and NDK 27, with `ANDROID_HOME` and `ANDROID_NDK_HOME` set
 - [Task](https://taskfile.dev)
 
 **Memory.** Heavy steps (gomobile, Gradle, the emulator) run through `scripts/capped`, which puts
