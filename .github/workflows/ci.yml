@@ -29,9 +29,11 @@ jobs:
         with:
           repository: dvher/pogo_pad
           path: server
+      # Pogo Pad's go.mod asks for a newer Go than the core's, and setup-go
+      # pins GOTOOLCHAIN=local, so install the newer one; it builds both.
       - uses: actions/setup-go@v7
         with:
-          go-version-file: mobile/core/go.mod
+          go-version-file: server/go.mod
           cache-dependency-path: |
             mobile/core/go.sum
             server/go.sum
