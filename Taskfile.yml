@@ -33,7 +33,7 @@ tasks:
       - '{{.CAPPED}} go test -p 2 ./...'
 
   apk:
-    desc: Build a debug APK → android/app/build/outputs/apk/debug/app-debug.apk
+    desc: Build a debug APK → android/app/build/outputs/apk/debug/app-universal-debug.apk
     dir: android
     deps: [core]
     cmds:
@@ -53,7 +53,7 @@ tasks:
     desc: Install the debug APK on the connected device or emulator
     deps: [apk]
     cmds:
-      - adb install -r android/app/build/outputs/apk/debug/app-debug-universal.apk
+      - adb install -r android/app/build/outputs/apk/debug/app-universal-debug.apk
 
   emulator:
     desc: Start a headless emulator (needs `nix develop .#emulator`); ANDROID_AVD_HOME must hold an AVD named pogo

@@ -13,14 +13,16 @@
           android_sdk.accept_license = true;
         };
       };
-      buildToolsVersion = "35.0.0";
+      buildToolsVersion = "37.0.0";
       ndkVersion = "27.2.12479018";
       composeSdk = emulator: pkgs.androidenv.composeAndroidPackages ({
-        platformVersions = [ "35" ];
+        platformVersions = [ "37.0" ];
         buildToolsVersions = [ buildToolsVersion ];
         includeNDK = true;
         ndkVersions = [ ndkVersion ];
       } // pkgs.lib.optionalAttrs emulator {
+        # Apps build against 37; the emulator runs the Android 15 (35) image.
+        platformVersions = [ "35" "37.0" ];
         includeEmulator = true;
         includeSystemImages = true;
         systemImageTypes = [ "google_apis" ];
