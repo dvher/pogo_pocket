@@ -25,6 +25,9 @@ func startServer(t *testing.T) (port, token string) {
 		}
 	}
 	if serverDir == "" {
+		if os.Getenv("CI") != "" {
+			t.Fatal("Pogo Pad repo not found next to this one")
+		}
 		t.Skip("Pogo Pad repo not found next to this one")
 	}
 	dir := t.TempDir()
