@@ -1,0 +1,146 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NDK_VERSION: 27.2.12479018
+
+jobs:
+  core:
+    name: Go core
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: mobile
+      # The sync test runs a real Pogo Pad built from ../../server.
+      - uses: actions/checkout@v7
+        with:
+          repository: dvher/pogo_pad
+          path: server
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: mobile/core/go.mod
+          cache-dependency-path: |
+            mobile/core/go.sum
+            server/go.sum
+      - name: gofmt
+        working-directory: mobile/core
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "::error::gofmt needed on: $unformatted"
+            exit 1
+          fi
+      - name: go mod tidy
+        working-directory: mobile/core
+        run: go mod tidy -diff
+      - run: go vet ./...
+        working-directory: mobile/core
+      - name: staticcheck
+        working-directory: mobile/core
+        run: go run honnef.co/go/tools/cmd/staticcheck@latest ./...
+      - name: Test (includes sync with Pogo Pad)
+        working-directory: mobile/core
+        run: go test -race -count=1 -v ./...
+      - name: Test with the Android SQLite driver
+        working-directory: mobile/core
+        run: go test -count=1 -tags pogo_wasmsqlite ./...
+
+  android:
+    name: Android build and lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: core/go.mod
+          cache-dependency-path: core/go.sum
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v4
+        with:
+          packages: platforms;android-35 build-tools;35.0.0 ndk;${{ env.NDK_VERSION }}
+      - uses: gradle/actions/setup-gradle@v5
+      - name: Build the Go core (gomobile bind)
+        working-directory: core
+        env:
+          ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/${{ env.NDK_VERSION }}
+        run: |
+          go install golang.org/x/mobile/cmd/gomobile golang.org/x/mobile/cmd/gobind
+          mkdir -p ../android/app/libs
+          gomobile bind -ldflags="-s -w" -target=android/arm64,android/arm,android/amd64 -androidapi 26 \
+            -javapkg dev.pogo.pocket.core -o ../android/app/libs/pogocore.aar .
+      - name: Assemble debug, release (minified, unsigned) and test APKs, and lint
+        working-directory: android
+        run: ./gradlew --no-daemon assembleDebug assembleRelease assembleDebugAndroidTest lintDebug
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: lint-report
+          path: android/app/build/reports/lint-results-debug.html
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pogocore-aar
+          path: android/app/libs/pogocore.aar
+          retention-days: 3
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pogo-pocket-debug
+          path: android/app/build/outputs/apk/debug/app-debug-universal.apk
+          retention-days: 14
+
+  # The instrumented tests call the Go core through the real gomobile
+  # binding and parse its JSON with the app's models, on an emulator.
+  device:
+    name: Instrumented tests (API ${{ matrix.api }})
+    needs: android
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        api: [26, 35]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: pogocore-aar
+          path: android/app/libs
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v5
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          target: ${{ matrix.api >= 30 && 'google_apis' || 'default' }}
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -no-audio -no-snapshot -no-boot-anim -gpu swiftshader_indirect
+          working-directory: android
+          script: ./gradlew --no-daemon connectedDebugAndroidTest
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: instrumented-test-report-${{ matrix.api }}
+          path: android/app/build/reports/androidTests/

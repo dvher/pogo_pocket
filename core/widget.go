@@ -119,4 +119,3 @@ func (c *Core) widgetView(key string) (WidgetView, error) {
 	v.BG, v.Ink, v.Accent = hexRGB(col.BG), hexRGB(col.Ink), hexRGB(col.Accent)
 	return v, nil
 }
-

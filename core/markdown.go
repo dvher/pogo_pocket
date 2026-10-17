@@ -138,14 +138,14 @@ var inlineRules = []struct {
 	re   *regexp.Regexp
 	repl string
 }{
-	{regexp.MustCompile(`!\[([^\]]*)\]\([^)]*\)`), "$1"},  // images
-	{regexp.MustCompile(`\[([^\]]+)\]\([^)]*\)`), "$1"},   // links
-	{regexp.MustCompile("`([^`]+)`"), "$1"},               // code
-	{regexp.MustCompile(`\*\*([^*]+)\*\*`), "$1"},         // bold
-	{regexp.MustCompile(`__([^_]+)__`), "$1"},             // bold
-	{regexp.MustCompile(`~~([^~]+)~~`), "$1"},             // strikethrough
-	{regexp.MustCompile(`\*([^*\s][^*]*)\*`), "$1"},       // italic
-	{regexp.MustCompile(`(^|\W)_([^_\s][^_]*)_(\W|$)`), "$1$2$3"}, // italic, not snake_case
+	{regexp.MustCompile(`!\[([^\]]*)\]\([^)]*\)`), "$1"},              // images
+	{regexp.MustCompile(`\[([^\]]+)\]\([^)]*\)`), "$1"},               // links
+	{regexp.MustCompile("`([^`]+)`"), "$1"},                           // code
+	{regexp.MustCompile(`\*\*([^*]+)\*\*`), "$1"},                     // bold
+	{regexp.MustCompile(`__([^_]+)__`), "$1"},                         // bold
+	{regexp.MustCompile(`~~([^~]+)~~`), "$1"},                         // strikethrough
+	{regexp.MustCompile(`\*([^*\s][^*]*)\*`), "$1"},                   // italic
+	{regexp.MustCompile(`(^|\W)_([^_\s][^_]*)_(\W|$)`), "$1$2$3"},     // italic, not snake_case
 	{regexp.MustCompile(`\\([\\*_\[\]()#+\-.!` + "`" + `~>])`), "$1"}, // escapes
 }
 
