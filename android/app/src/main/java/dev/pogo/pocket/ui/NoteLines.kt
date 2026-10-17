@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Text
@@ -42,7 +43,9 @@ fun NoteLines(
     onToggle: ((Int) -> Unit)? = null,
 ) {
     val base = if (compact) 13.sp else 16.sp
-    Column(modifier) {
+    // A compact preview lays its lines out at full size and lets the card clip
+    // them; squeezed into the height left over, the last checkbox gets crushed.
+    Column(if (compact) modifier.wrapContentHeight(Alignment.Top, unbounded = true) else modifier) {
         for (line in lines) {
             val indent = Modifier.padding(start = (line.indent * 16).dp)
             when (line.kind) {
