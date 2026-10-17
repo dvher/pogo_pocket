@@ -149,7 +149,11 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -no-audio -no-snapshot -no-boot-anim -gpu swiftshader_indirect
           working-directory: android
-          script: ./gradlew --no-daemon connectedDebugAndroidTest
+          # Then the smoke test against the minified build (release code, debug
+          # key), which catches R8 removing what's only reached by reflection.
+          script: |
+            ./gradlew --no-daemon connectedDebugAndroidTest
+            ./gradlew --no-daemon connectedMinifiedAndroidTest -Ppogo.testBuildType=minified -Pandroid.testInstrumentationRunnerArguments.class=dev.pogo.pocket.ReleaseSmokeTest
       - uses: actions/upload-artifact@v7
         if: failure()
         with:

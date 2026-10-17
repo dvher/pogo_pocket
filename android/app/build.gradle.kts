@@ -17,6 +17,7 @@ android {
         versionCode = 1
         versionName = "0.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testProguardFiles("test-proguard-rules.pro")
     }
 
     // Release signing comes from keystore.properties (not in git), written by
@@ -42,7 +43,19 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.findByName("release")
         }
+        // Release code, minified by R8, but signed with the debug key so tests can
+        // install it. Debug builds aren't minified, so they can't catch R8 removing
+        // something that's only reached by reflection.
+        create("minified") {
+            initWith(getByName("release"))
+            proguardFile("minified-rules.pro")
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += "release"
+        }
     }
+    // Instrumented tests run against one build type; -Ppogo.testBuildType=minified
+    // runs them against the minified build.
+    testBuildType = providers.gradleProperty("pogo.testBuildType").getOrElse("debug")
 
     // One APK per CPU type (smaller downloads) plus a universal one.
     splits {
