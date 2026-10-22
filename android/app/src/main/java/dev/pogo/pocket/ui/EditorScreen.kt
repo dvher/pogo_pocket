@@ -1,5 +1,6 @@
 package dev.pogo.pocket.ui
 
+import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -32,6 +33,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -39,9 +41,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.TextRange
@@ -49,6 +54,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
 import dev.pogo.pocket.Line
 import dev.pogo.pocket.Note
 import dev.pogo.pocket.Palette
@@ -69,6 +75,7 @@ fun EditorScreen(id: String, onDone: () -> Unit) {
     var saved by remember { mutableStateOf("") }
     var editing by remember { mutableStateOf(true) }
     var palette by remember { mutableStateOf(false) }
+    var picker by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
 
     fun save() {
@@ -77,6 +84,13 @@ fun EditorScreen(id: String, onDone: () -> Unit) {
         saved = text
         Pogo.background {
             runCatching { core.setContent(id, text) }
+            Pogo.edited(context)
+        }
+    }
+
+    fun setColor(name: String) {
+        Pogo.background {
+            runCatching { core.setColor(id, name) }
             Pogo.edited(context)
         }
     }
@@ -109,6 +123,16 @@ fun EditorScreen(id: String, onDone: () -> Unit) {
     val n = note ?: return
     val color = Palette.of(n.color)
 
+    // Status bar icons dark on light notes and light on dark (custom) ones.
+    val view = LocalView.current
+    DisposableEffect(color.bg) {
+        val window = (view.context as? Activity)?.window
+        val bars = window?.let { WindowCompat.getInsetsController(it, view) }
+        val before = bars?.isAppearanceLightStatusBars
+        bars?.isAppearanceLightStatusBars = color.bg.luminance() > 0.4f
+        onDispose { if (before != null) bars.isAppearanceLightStatusBars = before }
+    }
+
     Scaffold(
         containerColor = color.bg,
         topBar = {
@@ -128,18 +152,18 @@ fun EditorScreen(id: String, onDone: () -> Unit) {
                         DropdownMenu(expanded = palette, onDismissRequest = { palette = false }) {
                             Row(Modifier.padding(horizontal = 8.dp)) {
                                 Palette.colors.forEach { c ->
-                                    IconButton(onClick = {
-                                        palette = false
-                                        Pogo.background {
-                                            runCatching { core.setColor(id, c.name) }
-                                            Pogo.edited(context)
-                                        }
-                                    }) {
+                                    IconButton(onClick = { palette = false; setColor(c.name) }) {
                                         Box(
                                             Modifier.size(28.dp).background(c.bg, CircleShape)
                                                 .border(if (c.name == n.color) 3.dp else 1.dp, c.accent, CircleShape),
                                         )
                                     }
+                                }
+                                IconButton(onClick = { palette = false; picker = true }) {
+                                    Box(
+                                        Modifier.size(28.dp).background(Brush.sweepGradient((0..6).map { Color.hsv(it * 60f % 360f, 0.7f, 1f) }), CircleShape)
+                                            .border(if (Palette.isCustom(n.color)) 3.dp else 1.dp, color.ink.copy(alpha = 0.5f), CircleShape),
+                                    )
                                 }
                             }
                         }
@@ -184,6 +208,10 @@ fun EditorScreen(id: String, onDone: () -> Unit) {
                 onToggle = { line -> content = Pogocore.toggleTask(content, line.toLong()) },
             )
         }
+    }
+
+    if (picker) {
+        ColorPickerDialog(n.color, onPick = { picker = false; setColor(it) }, onDismiss = { picker = false })
     }
 
     if (confirmDelete) {

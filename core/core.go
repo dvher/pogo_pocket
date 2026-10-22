@@ -167,7 +167,7 @@ func (c *Core) SetContent(id, content string) error {
 	return nil
 }
 
-// SetColor changes a note's color (see PaletteJSON).
+// SetColor changes a note's color: a PaletteJSON name or "#rrggbb".
 func (c *Core) SetColor(id, color string) error {
 	if !palette.Valid(color) {
 		return fmt.Errorf("unknown color %q", color)
@@ -245,6 +245,13 @@ func PaletteJSON() string {
 		out[i] = color{p.Name, hexRGB(p.BG), hexRGB(p.Ink), hexRGB(p.Accent)}
 	}
 	return toJSON(out)
+}
+
+// ColorJSON returns {name, bg, ink, accent} for a palette name or a custom
+// "#rrggbb" color, whose text and accent colors are derived from it.
+func ColorJSON(name string) string {
+	p := palette.Get(name)
+	return toJSON(map[string]string{"name": p.Name, "bg": hexRGB(p.BG), "ink": hexRGB(p.Ink), "accent": hexRGB(p.Accent)})
 }
 
 func hexRGB(c [3]uint8) string { return fmt.Sprintf("#%02x%02x%02x", c[0], c[1], c[2]) }
