@@ -292,3 +292,16 @@ func TestSyncWithDesktopProtocol(t *testing.T) {
 		t.Fatalf("%q %v", msg, err)
 	}
 }
+
+func TestColorJSON(t *testing.T) {
+	var c struct{ Name, BG, Ink, Accent string }
+	if err := json.Unmarshal([]byte(ColorJSON("#3a7bd5")), &c); err != nil {
+		t.Fatal(err)
+	}
+	if c.Name != "#3a7bd5" || c.BG != "#3a7bd5" || c.Ink == "" || c.Ink == c.BG {
+		t.Errorf("ColorJSON(#3a7bd5) = %+v", c)
+	}
+	if err := json.Unmarshal([]byte(ColorJSON("nope")), &c); err != nil || c.Name != "yellow" {
+		t.Errorf("unknown color = %+v, %v", c, err)
+	}
+}

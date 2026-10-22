@@ -82,7 +82,16 @@ object Palette {
         }
     }
 
-    fun of(name: String) = colors.firstOrNull { it.name == name } ?: colors.first()
+    private val custom = java.util.concurrent.ConcurrentHashMap<String, PaletteColor>()
+
+    // Palette colors, or a custom "#rrggbb" with text and accent colors
+    // derived by the Go core.
+    fun of(name: String): PaletteColor = colors.firstOrNull { it.name == name } ?: custom.getOrPut(name) {
+        val o = JSONObject(Pogocore.colorJSON(name))
+        PaletteColor(o.getString("name"), hex(o.getString("bg")), hex(o.getString("ink")), hex(o.getString("accent")))
+    }
+
+    fun isCustom(name: String) = Regex("^#[0-9a-f]{6}$").matches(name)
 }
 
 data class SyncStatus(
