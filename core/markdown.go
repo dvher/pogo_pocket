@@ -26,6 +26,36 @@ func ToggleTask(src string, line int) string {
 	return strings.Join(lines, "\n")
 }
 
+var (
+	pastedBullet = regexp.MustCompile(`^(?:[-*+]\s+|[•·▪◦–—]\s*|\d+[.)]\s+)`)
+	pastedCheck  = regexp.MustCompile(`^(?:\[([ xX])\]|([☐□])|([☑☒✓✔✅]))\s*`)
+	lineBreak    = regexp.MustCompile(`\r?\n|\r`)
+)
+
+// ChecklistFromText turns pasted lines ("• milk", "☑ eggs", "1. bread",
+// plain text…) into a Markdown checklist, keeping indentation and checked
+// state. Mirrors toChecklist in the desktop's frontend/src/lib/editing.ts.
+func ChecklistFromText(src string) string {
+	var out []string
+	for _, raw := range lineBreak.Split(src, -1) {
+		body := strings.TrimSpace(raw)
+		if body == "" {
+			continue
+		}
+		indent := strings.ReplaceAll(raw[:len(raw)-len(strings.TrimLeft(raw, " \t"))], "\t", "  ")
+		body = pastedBullet.ReplaceAllString(body, "")
+		mark := " "
+		if m := pastedCheck.FindStringSubmatch(body); m != nil {
+			if (m[1] != "" && m[1] != " ") || m[3] != "" {
+				mark = "x"
+			}
+			body = body[len(m[0]):]
+		}
+		out = append(out, indent+"- ["+mark+"] "+strings.TrimSpace(body))
+	}
+	return strings.Join(out, "\n")
+}
+
 var titlePrefix = regexp.MustCompile(`^\s*(#+\s*|(?:[-*+]|\d+[.)])\s+)(\[[ xX]\]\s*)?`)
 
 // TitleOf returns the first meaningful line, for lists and pickers.

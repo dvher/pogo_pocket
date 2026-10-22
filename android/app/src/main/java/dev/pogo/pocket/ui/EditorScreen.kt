@@ -4,8 +4,11 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -149,23 +152,30 @@ fun EditorScreen(id: String, onDone: () -> Unit) {
             )
         },
     ) { padding ->
-        val body = Modifier.padding(padding).imePadding().fillMaxSize()
+        val body = Modifier.padding(padding).consumeWindowInsets(padding).imePadding().fillMaxSize()
         if (editing) {
             // Keep the cursor where the user left it; start at the end.
             var field by remember { mutableStateOf(TextFieldValue(content, TextRange(content.length))) }
             if (field.text != content) field = TextFieldValue(content, TextRange(content.length))
             val focus = remember { FocusRequester() }
             LaunchedEffect(Unit) { focus.requestFocus() }
-            BasicTextField(
-                value = field,
-                onValueChange = {
-                    field = it
-                    content = it.text
-                },
-                textStyle = TextStyle(color = color.ink, fontSize = 16.sp, lineHeight = 24.sp),
-                cursorBrush = SolidColor(color.ink),
-                modifier = body.padding(horizontal = 20.dp, vertical = 8.dp).focusRequester(focus),
-            )
+            fun update(value: TextFieldValue) {
+                field = value
+                content = value.text
+            }
+            Column(body) {
+                BasicTextField(
+                    value = field,
+                    onValueChange = {
+                        val old = field
+                        update(if (MarkdownEdit.typedNewline(old, it)) MarkdownEdit.continueList(old) ?: it else it)
+                    },
+                    textStyle = TextStyle(color = color.ink, fontSize = 16.sp, lineHeight = 24.sp),
+                    cursorBrush = SolidColor(color.ink),
+                    modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp).focusRequester(focus),
+                )
+                MarkdownToolbar(field, color.ink, ::update)
+            }
         } else {
             val lines = remember(content) { Line.of(content) }
             NoteLines(

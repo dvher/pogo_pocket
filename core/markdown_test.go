@@ -73,3 +73,21 @@ func TestTitleOf(t *testing.T) {
 		}
 	}
 }
+
+// Same cases as toChecklist in the desktop's frontend/src/lib/editing.test.ts.
+func TestChecklistFromText(t *testing.T) {
+	for _, c := range [][2]string{
+		{"milk\neggs", "- [ ] milk\n- [ ] eggs"},
+		{"• milk\n· eggs\n▪ ham\n◦ jam\n– tea\n— gin", "- [ ] milk\n- [ ] eggs\n- [ ] ham\n- [ ] jam\n- [ ] tea\n- [ ] gin"},
+		{"- milk\n* eggs\n+ ham\n1. jam\n2) tea", "- [ ] milk\n- [ ] eggs\n- [ ] ham\n- [ ] jam\n- [ ] tea"},
+		{"☐ milk\n□ eggs\n☑ ham\n☒ jam\n✓ tea\n✔ gin\n✅ rum", "- [ ] milk\n- [ ] eggs\n- [x] ham\n- [x] jam\n- [x] tea\n- [x] gin\n- [x] rum"},
+		{"- [ ] milk\n- [x] eggs\n[X] ham", "- [ ] milk\n- [x] eggs\n- [x] ham"},
+		{"Groceries\n  milk\n\tsoy\n\n\r\neggs  ", "- [ ] Groceries\n  - [ ] milk\n  - [ ] soy\n- [ ] eggs"},
+		{"-5 degrees\n1.5 kg", "- [ ] -5 degrees\n- [ ] 1.5 kg"},
+		{"\n  \n", ""},
+	} {
+		if got := ChecklistFromText(c[0]); got != c[1] {
+			t.Errorf("ChecklistFromText(%q) = %q, want %q", c[0], got, c[1])
+		}
+	}
+}
