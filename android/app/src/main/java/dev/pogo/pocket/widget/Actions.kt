@@ -14,6 +14,9 @@ class NextNoteAction : ActionCallback {
         val key = Widgets.key(context, glanceId)
         withContext(Dispatchers.IO) { Pogo.core(context).widgetNext(key) }
         Widgets.refresh(context, glanceId)
+        // Looking at the widget is a good moment to catch up, in case Android
+        // held back the background sync.
+        SyncWorker.syncNow(context)
     }
 }
 
