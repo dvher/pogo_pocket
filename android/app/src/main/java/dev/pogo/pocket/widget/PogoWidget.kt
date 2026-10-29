@@ -1,5 +1,6 @@
 package dev.pogo.pocket.widget
 
+import android.appwidget.AppWidgetManager
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -74,6 +75,14 @@ class PogoWidgetReceiver : GlanceAppWidgetReceiver() {
 
     override fun onEnabled(context: Context) {
         super.onEnabled(context)
+        SyncWorker.schedulePeriodic(context)
+        SyncWorker.syncNow(context)
+    }
+
+    // Also sent after a reboot or an app update, which on some phones (Xiaomi)
+    // can drop the periodic job.
+    override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
+        super.onUpdate(context, appWidgetManager, appWidgetIds)
         SyncWorker.schedulePeriodic(context)
         SyncWorker.syncNow(context)
     }

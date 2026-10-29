@@ -42,6 +42,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import dev.pogo.pocket.BackgroundSync
 import dev.pogo.pocket.Pogo
 import dev.pogo.pocket.Settings
 import dev.pogo.pocket.widget.SyncWorker
@@ -132,6 +134,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                 Text(text, color = if (ok) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)
             }
             StatusLine(status.enabled, status.syncing, status.lastSync, status.lastError)
+            if (status.enabled) BackgroundSection()
 
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
             Text("End-to-end encryption", style = MaterialTheme.typography.titleMedium)
@@ -194,6 +197,35 @@ private fun SwitchRow(label: String, checked: Boolean, onChange: (Boolean) -> Un
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(label, Modifier.weight(1f))
         Switch(checked, onChange)
+    }
+}
+
+/** Widgets only stay current if Android lets the background sync run. */
+@Composable
+private fun BackgroundSection() {
+    val context = LocalContext.current
+    var unrestricted by remember { mutableStateOf(BackgroundSync.isUnrestricted(context)) }
+    // The user comes back from a system screen.
+    LifecycleResumeEffect(Unit) {
+        unrestricted = BackgroundSync.isUnrestricted(context)
+        onPauseOrDispose {}
+    }
+
+    HorizontalDivider(Modifier.padding(vertical = 8.dp))
+    Text("Background sync", style = MaterialTheme.typography.titleMedium)
+    Text(
+        if (unrestricted) "Widgets sync about every 15 minutes, even when the app is closed."
+        else "Battery optimization can hold back background sync for hours, so widgets may only update when you open the app.",
+    )
+    if (!unrestricted) {
+        Button(onClick = { BackgroundSync.requestUnrestricted(context) }) { Text("Allow background sync") }
+    }
+    if (BackgroundSync.isXiaomi) {
+        Text(
+            "On Xiaomi phones, also turn on Autostart for Pogo Pocket, and set its battery saver to \"No restrictions\".",
+            style = MaterialTheme.typography.bodySmall,
+        )
+        OutlinedButton(onClick = { BackgroundSync.openAutostart(context) }) { Text("Open Autostart") }
     }
 }
 
