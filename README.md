@@ -46,6 +46,15 @@ To add the widget, use your launcher's widget picker, or the app's **⋮ → Add
 
 Only note text and color sync, the same as on the desktop.
 
+## Export and import
+
+- **One note:** in the editor, ⋮ → *Export as Markdown*, *Export as HTML*, or *Print or save as PDF*
+  (choose "Save as PDF" as the printer).
+- **All notes:** on the notes list, ⋮ → *Export all notes* saves a zip of Markdown files, the same
+  format as Pogo on the desktop. Unzipped, it opens as an Obsidian vault.
+- **Import:** ⋮ → *Import notes* takes Pogo zips and Markdown files (pick several at once). Notes
+  exported by Pogo keep their identity, so importing them again only applies newer copies.
+
 ## Privacy
 
 - **On the phone:** notes and the sync token are encrypted in the app's database with AES-256-GCM.
