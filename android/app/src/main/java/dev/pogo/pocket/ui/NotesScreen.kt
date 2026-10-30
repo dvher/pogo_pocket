@@ -1,5 +1,7 @@
 package dev.pogo.pocket.ui
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -33,6 +35,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -55,6 +59,7 @@ import dev.pogo.pocket.Note
 import dev.pogo.pocket.Palette
 import dev.pogo.pocket.Pogo
 import dev.pogo.pocket.R
+import dev.pogo.pocket.core.pogocore.Pogocore
 import dev.pogo.pocket.widget.Widgets
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -68,6 +73,39 @@ fun NotesScreen(onOpen: (String) -> Unit, onNew: () -> Unit, onSettings: () -> U
     val status by Pogo.status.collectAsState()
     var notes by remember { mutableStateOf<List<Note>?>(null) }
     val scope = rememberCoroutineScope()
+    val snackbar = remember { SnackbarHostState() }
+
+    val exportAll = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val result = withContext(Dispatchers.IO) { runCatching { Pogo.core(context).exportZip() } }
+                .mapCatching { Export.write(context, uri, it).getOrThrow() }
+            snackbar.showSnackbar(result.fold({ "Exported ${notes?.size ?: 0} notes" }, { "Export failed: ${it.message}" }))
+        }
+    }
+    // Pogo exports (zip) and Markdown files; .md files often have no
+    // dedicated MIME type, so any file can be picked and the core checks it.
+    val importNotes = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        if (uris.isEmpty()) return@rememberLauncherForActivityResult
+        scope.launch {
+            var created = 0
+            var updated = 0
+            var skipped = 0
+            val errors = mutableListOf<String>()
+            for (uri in uris) {
+                runCatching {
+                    val (name, data) = Export.read(context, uri)
+                    val report = withContext(Dispatchers.IO) { org.json.JSONObject(Pogo.core(context).importFile(name, data)) }
+                    created += report.getInt("created")
+                    updated += report.getInt("updated")
+                    skipped += report.getInt("skipped")
+                }.onFailure { errors += it.message.orEmpty() }
+            }
+            if (created + updated > 0) Pogo.edited(context)
+            val summary = "Imported $created new, updated $updated, skipped $skipped"
+            snackbar.showSnackbar(if (errors.isEmpty()) summary else "$summary. ${errors.first()}")
+        }
+    }
 
     LaunchedEffect(revision) {
         notes = withContext(Dispatchers.IO) { Note.parseList(Pogo.core(context).notesJSON()) }
@@ -86,6 +124,14 @@ fun NotesScreen(onOpen: (String) -> Unit, onNew: () -> Unit, onSettings: () -> U
                             menu = false
                             scope.launch(Dispatchers.IO) { runCatching { Pogo.core(context).syncNow() } }
                         })
+                        DropdownMenuItem(text = { Text("Export all notes") }, onClick = {
+                            menu = false
+                            exportAll.launch(Pogocore.exportZipName())
+                        })
+                        DropdownMenuItem(text = { Text("Import notes") }, onClick = {
+                            menu = false
+                            importNotes.launch(arrayOf("application/zip", "text/markdown", "text/plain", "application/octet-stream", "*/*"))
+                        })
                         if (Widgets.canPin(context)) {
                             DropdownMenuItem(text = { Text("Add widget to home screen") }, onClick = {
                                 menu = false
@@ -96,6 +142,7 @@ fun NotesScreen(onOpen: (String) -> Unit, onNew: () -> Unit, onSettings: () -> U
                 },
             )
         },
+        snackbarHost = { SnackbarHost(snackbar) },
         floatingActionButton = {
             FloatingActionButton(onClick = onNew) { Icon(Icons.Default.Add, "New note") }
         },

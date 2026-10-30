@@ -3,6 +3,8 @@ package pogocore
 import (
 	"regexp"
 	"strings"
+
+	"github.com/dvher/pogo/pkg/notefile"
 )
 
 // Mirrors toggleTask in the desktop's frontend/src/lib/markdown.ts.
@@ -56,17 +58,8 @@ func ChecklistFromText(src string) string {
 	return strings.Join(out, "\n")
 }
 
-var titlePrefix = regexp.MustCompile(`^\s*(#+\s*|(?:[-*+]|\d+[.)])\s+)(\[[ xX]\]\s*)?`)
-
 // TitleOf returns the first meaningful line, for lists and pickers.
-func TitleOf(src string) string {
-	for _, l := range strings.Split(src, "\n") {
-		if t := stripInline(strings.TrimSpace(titlePrefix.ReplaceAllString(l, ""))); t != "" {
-			return t
-		}
-	}
-	return "Empty note"
-}
+func TitleOf(src string) string { return notefile.Title(src) }
 
 // Line is one rendered line of a note, simple enough for a home-screen
 // widget to draw with plain text views.
@@ -164,27 +157,7 @@ func indentLevel(ws string) int {
 	return n / 2
 }
 
-var inlineRules = []struct {
-	re   *regexp.Regexp
-	repl string
-}{
-	{regexp.MustCompile(`!\[([^\]]*)\]\([^)]*\)`), "$1"},              // images
-	{regexp.MustCompile(`\[([^\]]+)\]\([^)]*\)`), "$1"},               // links
-	{regexp.MustCompile("`([^`]+)`"), "$1"},                           // code
-	{regexp.MustCompile(`\*\*([^*]+)\*\*`), "$1"},                     // bold
-	{regexp.MustCompile(`__([^_]+)__`), "$1"},                         // bold
-	{regexp.MustCompile(`~~([^~]+)~~`), "$1"},                         // strikethrough
-	{regexp.MustCompile(`\*([^*\s][^*]*)\*`), "$1"},                   // italic
-	{regexp.MustCompile(`(^|\W)_([^_\s][^_]*)_(\W|$)`), "$1$2$3"},     // italic, not snake_case
-	{regexp.MustCompile(`\\([\\*_\[\]()#+\-.!` + "`" + `~>])`), "$1"}, // escapes
-}
-
-func stripInline(s string) string {
-	for _, r := range inlineRules {
-		s = r.re.ReplaceAllString(s, r.repl)
-	}
-	return s
-}
+func stripInline(s string) string { return notefile.StripInline(s) }
 
 // LinesJSON returns Lines(src) as JSON, for the app's preview.
 func LinesJSON(src string) string { return toJSON(Lines(src)) }

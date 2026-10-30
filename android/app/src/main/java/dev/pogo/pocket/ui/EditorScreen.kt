@@ -1,7 +1,10 @@
 package dev.pogo.pocket.ui
 
 import android.app.Activity
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -22,8 +25,10 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,6 +44,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -62,6 +68,7 @@ import dev.pogo.pocket.Pogo
 import dev.pogo.pocket.core.pogocore.Pogocore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,6 +84,43 @@ fun EditorScreen(id: String, onDone: () -> Unit) {
     var palette by remember { mutableStateOf(false) }
     var picker by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
+    var menu by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    // Saves unsaved edits before exporting, so the file has what's on screen.
+    suspend fun flush() {
+        val text = content
+        if (note == null || text == saved) return
+        saved = text
+        withContext(Dispatchers.IO) { runCatching { core.setContent(id, text) } }
+        Pogo.edited(context)
+    }
+
+    fun saveAs(uri: android.net.Uri?, render: () -> ByteArray) {
+        if (uri == null) return
+        scope.launch {
+            flush()
+            val result = withContext(Dispatchers.IO) { runCatching(render) }
+                .mapCatching { Export.write(context, uri, it).getOrThrow() }
+            val msg = result.fold({ "Note exported" }, { "Export failed: ${it.message}" })
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+        }
+    }
+    val exportMarkdown = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/markdown")) { uri ->
+        saveAs(uri) { core.noteMarkdown(id) }
+    }
+    val exportHtml = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/html")) { uri ->
+        saveAs(uri) { core.noteHTML(id).toByteArray() }
+    }
+    fun filename(ext: String) = runCatching { core.noteFilename(id, ext) }.getOrDefault("Note$ext")
+    fun print() {
+        val activity = context as? Activity ?: return
+        scope.launch {
+            flush()
+            val html = withContext(Dispatchers.IO) { runCatching { core.noteHTML(id) }.getOrNull() } ?: return@launch
+            Export.print(activity, filename(""), html)
+        }
+    }
 
     fun save() {
         val text = content
@@ -172,6 +216,23 @@ fun EditorScreen(id: String, onDone: () -> Unit) {
                         if (editing) Icon(Icons.Default.Check, "Preview") else Icon(Icons.Default.Edit, "Edit")
                     }
                     IconButton(onClick = { confirmDelete = true }) { Icon(Icons.Default.Delete, "Delete") }
+                    Box {
+                        IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, "More") }
+                        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                            DropdownMenuItem(text = { Text("Export as Markdown") }, onClick = {
+                                menu = false
+                                exportMarkdown.launch(filename(".md"))
+                            })
+                            DropdownMenuItem(text = { Text("Export as HTML") }, onClick = {
+                                menu = false
+                                exportHtml.launch(filename(".html"))
+                            })
+                            DropdownMenuItem(text = { Text("Print or save as PDF") }, onClick = {
+                                menu = false
+                                print()
+                            })
+                        }
+                    }
                 },
             )
         },
